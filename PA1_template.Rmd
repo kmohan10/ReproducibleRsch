@@ -1,0 +1,156 @@
+Activity Monitoring Analysis
+========================================================
+This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
+
+Dataset: Activity monitoring data [52K]
+The variables included in this dataset are:
+
+        steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
+        
+        date: The date on which the measurement was taken in YYYY-MM-DD format
+        
+        interval: Identifier for the 5-minute interval in which measurement was taken
+
+The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.
+
+
+Read input file
+```{r InputDate, echo=TRUE}
+
+input <- read.csv("activity.csv")
+
+```
+
+Determine mean total number of steps taken per day
+        Ignore rows with incomplete data
+        1. Make a histogram of total number of steps taken per day
+```{r, histTotSteps, fig.width=7,fig.height=6, echo=TRUE}
+        input <- input[complete.cases(input),]
+
+                total_steps_daily <- by(input$steps,input$date,sum)
+        
+                hist(total_steps_daily, xlab = "Total Steps per day", ylab = "Number of Steps",
+                        main = "Total Steps Taken per Day")
+        
+```
+
+
+        2. Calculate mean and median total number of steps per day
+``` {r,meanDaily,echo=TRUE}
+        
+                library(dplyr)
+                a <- group_by(input,date)
+                input_by_date <- summarize(a, mean_steps = mean(steps),
+                                  median_steps = median(steps),
+                                  n=n())
+                                
+                summary(input_by_date)
+
+```
+
+What is the Average Daily Pattern
+         1. Make a time-series plot (type = 'l') of 5 minute intervals and average number of steps
+               taken, average across all days
+```{r,avgDailyPlot,fig.width=7,fig.height=6,echo=TRUE}
+
+                library(dplyr)                
+                b <- group_by(input,interval)                
+                avg_steps_interval <- summarize(b,mean_steps = mean(steps),n=n())
+                
+                
+                        plot(avg_steps_interval$interval, avg_steps_interval$mean_steps,type = "l", 
+                             xlab = "Intervals", ylab = "Avg. number of steps",
+                                main = "Average Steps in each Interval")
+                
+```
+
+2. Which 5-minute interval on average across all days contains the maximum number of steps?
+                
+```{r,avgInt,echo=TRUE}
+        
+                max_steps <- subset(avg_steps_interval,mean_steps == max(avg_steps_interval$mean_steps))
+                max_steps$interval
+
+```
+
+
+ IMPUTTING MISSING VALUES
+         1. Calculate number of missing values in the dataset
+                 Read input file
+
+```{r,imputData, echo=TRUE}
+                input <- read.csv("activity.csv")
+                # Calculate number of incomplete rows
+                incomplete_input <- input[!complete.cases(input),]
+                incomplete_row_count <- nrow(incomplete_input)
+                # Total number of missing values in dataset:
+                incomplete_row_count
+
+        ## 2. Fill in missing values in the dataset - Imput values to replace NA
+                mean_steps <- mean(input$steps, na.rm = TRUE)
+                incomplete_input$steps <- mean_steps
+                # All steps with missing values will have the mean of steps for all days
+                complete_input <- input[complete.cases(input),]
+                nrow(incomplete_input[!complete.cases(incomplete_input),])
+                input <- merge(complete_input, incomplete_input,all=TRUE)
+                
+                ## Verify there are no incomplete cases
+                input[!complete.cases(input),]
+                ## Value zero indicates all the values have been successfully imputted                
+
+        
+```
+        
+         4. Create histogram of total steps each day.  Calculate Mean and Median with imputted values.
+```{r,histTotalSteps, fig.width=7, fig.height=6}
+
+                total_steps_daily <- by(input$steps,input$date,sum)
+                hist(total_steps_daily, xlab = "Total Steps per day", ylab = "Number of Steps",
+                                main = "Total Steps per Day (with imputted data)")    
+
+```
+        
+        a. Calculate mean and median total number of steps per day
+```{r,meanMedian,echo=TRUE}
+        
+                library(dplyr)
+                a <- group_by(input,date)
+                input_by_date <- summarize(a, mean_steps = mean(steps),
+                                  median_steps = median(steps),
+                                  n=n())
+                input_by_date
+
+```
+
+Categorize dates to "Weekday" or "Weekend" and plot on separate panels
+```{r,weekday,echo=TRUE}
+        ## Insert column to determine is a date is 'Weekday" or"Weekend"
+        input$week <- weekdays(as.Date(input$date))
+
+        wd <- c("Monday","Tuesday","Wednesday","Thursday","Friday")
+        we <- c("Saturday","Sunday")
+        n <- nrow(input)
+        for (i in 1:n) {
+                if (input$week[i] %in% we) {
+                        input$weekd[i] <- "weekend"
+                        } else {
+                        input$weekd[i] <- "weekday"        
+                        }
+        }
+                
+```
+
+        Plot for Weekday and Weekend measured values
+```{r,plotWeekday,fig.width=7, fig.height=6}
+
+        library(lattice)
+
+                a <- group_by(input,interval,weekd)
+                input_by_date_wd <- summarize(a, mean_steps = mean(steps),n=n())
+
+                xyplot(mean_steps ~ interval|weekd, data = input_by_date_wd, type = 'l',
+                            layout=c(1,2),
+                            main = "Mean Steps per day",
+                            xlab = "Interval", ylab = "Number of steps")
+```
+
