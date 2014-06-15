@@ -44,7 +44,7 @@ Determine mean total number of steps taken per day
                                   median_steps = median(steps),
                                   n=n())
                                 
-                summary(input_by_date)
+                input_by_date
 
 ```
 
@@ -91,14 +91,13 @@ What is the Average Daily Pattern
                 incomplete_input$steps <- mean_steps
                 # All steps with missing values will have the mean of steps for all days
                 complete_input <- input[complete.cases(input),]
-                nrow(incomplete_input[!complete.cases(incomplete_input),])
+                
                 input <- merge(complete_input, incomplete_input,all=TRUE)
                 
-                ## Verify there are no incomplete cases
+                ## Verify there are no incomplete cases - zero indicates all 
+                ## incomplete fields have successfully imputted values
                 input[!complete.cases(input),]
-                ## Value zero indicates all the values have been successfully imputted                
-
-        
+                        
 ```
         
          4. Create histogram of total steps each day.  Calculate Mean and Median with imputted values.
